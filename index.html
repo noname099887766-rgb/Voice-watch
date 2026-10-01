@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<link rel="manifest" href="manifest.json">
+<title>Voice Watch</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#080808;color:#fff;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center}
+.box{text-align:center;width:100%;padding:25px}.time{font-size:clamp(42px,13vw,76px);font-weight:700;letter-spacing:2px}.date{font-size:18px;color:#aaa;margin:15px 0 28px}
+button{font-size:20px;padding:15px 25px;border:0;border-radius:15px;background:#fff;color:#111}button:active{transform:scale(.97)}
+.status{margin-top:18px;color:#aaa;min-height:24px}
+.install{display:none;margin-top:15px;background:#222;color:#fff;font-size:16px}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="time" id="time">00:00:00</div>
+  <div class="date" id="date"></div>
+  <button id="listen">🎤 Time Pucho</button>
+  <button class="install" id="install">📲 Home Screen par Install</button>
+  <div class="status" id="status">Button dabao aur bolo: “Time batao”</div>
+</div>
+<script>
+function clock(){
+ const d=new Date();
+ time.textContent=d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+ date.textContent=d.toLocaleDateString('hi-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+setInterval(clock,1000); clock();
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function speak(t){
+ const u=new SpeechSynthesisUtterance(t); u.lang='hi-IN'; u.rate=.9;
+ speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function tell(){
+ const t=new Date().toLocaleTimeString('hi-IN',{hour:'numeric',minute:'2-digit',hour12:true});
+ status.textContent='⏰ अभी समय है '+t; speak('अभी समय है '+t);
+}
+listen.onclick=()=>{
+ if(!SR){status.textContent='इस browser में voice recognition उपलब्ध नहीं है।';return;}
+ const r=new SR(); r.lang='hi-IN'; r.interimResults=false; r.continuous=false;
+ r.onstart=()=>status.textContent='🎤 सुन रहा हूँ...';
+ r.onresult=e=>{status.textContent='आपने कहा: '+e.results[0][0].transcript; tell();};
+ r.onerror=()=>status.textContent='आवाज़ समझ नहीं आई, फिर से दबाकर बोलिए।';
+ r.start();
+};
+
+let deferred;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;install.style.display='inline-block';});
+install.onclick=async()=>{if(deferred){deferred.prompt();deferred=null;}};
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
